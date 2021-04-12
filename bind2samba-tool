@@ -28,9 +28,15 @@ def args_parser():
         'Convert data in BIND zone format to calls to samba-tool.')
     parser.add_argument("--zone")
     parser.add_argument("--ipv4-subnet",
-                        help="Subnet for IPv4 reverse DNS lookups")
+                        action="append",
+                        default=[],
+                        help="Subnet for IPv4 reverse DNS lookups; "
+                             "can be given multiple times ")
     parser.add_argument("--ipv6-subnet",
-                        help="Subnet for IPv6 reverse DNS lookups")
+                        action="append",
+                        default=[],
+                        help="Subnet for IPv6 reverse DNS lookups; "
+                             "can be given multiple times")
     parser.add_argument("--password",
                         help="Administrator password for samba-tool")
     parser.add_argument("zonefile",
@@ -38,6 +44,19 @@ def args_parser():
                         type=argparse.FileType('r'),
                         default=sys.stdin)
     return parser
+
+def filter_matching_subnet(address, subnets):
+    """Returns the subnet containing the given address.
+
+    Given an addres and a list of subnets, this method returns the smallest
+    subnet that contains the given address.
+    """
+    filtered_subnets = sorted([s for s in subnets if address in s],
+                              key=lambda x: x.prefixlen)
+    print(">>> %s" % filtered_subnets)
+    if filtered_subnets:
+        return filtered_subnets[-1]
+    return None
 
 def rev4_from_network(subnet):
     octets = subnet.network_address.packed[0:ceil(subnet.prefixlen/8)]
@@ -73,6 +92,7 @@ def add_cname(name, target, domainname):
 
 def add_a(name, address, domainname, rev4=None):
     c = [cmd(domainname, name, 'A', str(address))]
+    rev4 = filter_matching_subnet(address, rev4)
     if rev4:
         c += [cmd(rev4_from_network(rev4),
                   str(address.reverse_pointer),
@@ -82,6 +102,7 @@ def add_a(name, address, domainname, rev4=None):
 
 def add_aaaa(name, address, domainname, rev6=None):
     c = [cmd(domainname, name, 'AAAA', str(address))]
+    rev6 = filter_matching_subnet(address, rev6)
     if rev6:
         c += [cmd(rev6_from_network(rev6),
               str(address.reverse_pointer),
@@ -151,8 +172,8 @@ def print_commands(cmds):
 def main():
     args = args_parser().parse_args()
     admin_password = args.password
-    rev4 = IPv4Network(args.ipv4_subnet) if args.ipv4_subnet else None
-    rev6 = IPv6Network(args.ipv6_subnet) if args.ipv6_subnet else None
+    rev4 = [IPv4Network(x) for x in args.ipv4_subnet]
+    rev6 = [IPv6Network(x) for x in args.ipv6_subnet]
     cmds = read_file(args.zonefile, args.zone, rev4, rev6)
     sys.stdin.close()
     sys.stdin = os.fdopen(1)
