@@ -1,0 +1,22 @@
+$ORIGIN example.com.
+$TTL    3d
+
+example.com. IN      SOA     ns1.example.com. hostmaster.example.com.
+(
+        2018022301                  ; Serial
+        1h                          ; Refresh
+        15m                         ; Retry
+        2w                          ; Expire
+        1h)                         ; Negative TTL
+
+example.com.     IN      NS      galathea-bond0.example.com
+example.com.     IN      MX      10 mx
+
+
+;
+; Local, trusted network:
+;
+
+charon          IN      A       172.16.5.1
+charon          IN      AAAA    2001:170:1243:1::1
+
