@@ -53,7 +53,6 @@ def filter_matching_subnet(address, subnets):
     """
     filtered_subnets = sorted([s for s in subnets if address in s],
                               key=lambda x: x.prefixlen)
-    print(">>> %s" % filtered_subnets)
     if filtered_subnets:
         return filtered_subnets[-1]
     return None
