@@ -89,7 +89,7 @@ def expand_name(name, domainname):
 def add_cname(name, target, domainname):
     return [cmd(domainname, name, 'CNAME', expand_name(target, domainname))]
 
-def add_a(name, address, domainname, rev4=None):
+def add_a(name, address, domainname, rev4=list()):
     c = [cmd(domainname, name, 'A', str(address))]
     rev4 = filter_matching_subnet(address, rev4)
     if rev4:
@@ -99,7 +99,7 @@ def add_a(name, address, domainname, rev4=None):
                   "%s.%s" % (name, domainname))]
     return c
 
-def add_aaaa(name, address, domainname, rev6=None):
+def add_aaaa(name, address, domainname, rev6=list()):
     c = [cmd(domainname, name, 'AAAA', str(address))]
     rev6 = filter_matching_subnet(address, rev6)
     if rev6:

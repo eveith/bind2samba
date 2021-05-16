@@ -5,6 +5,10 @@ from bind2sambatool import (
     filter_matching_subnet,
     rev4_from_network,
     rev6_from_network,
+    add_a,
+    add_aaaa,
+    add_cname,
+    add_mx,
 )
 
 class Bind2SambaToolTest(unittest.TestCase):
@@ -56,6 +60,115 @@ class Bind2SambaToolTest(unittest.TestCase):
             rev6_from_network(ipaddress.ip_network("2001:470:76c4:1::/64"))
         )
 
+    def test_add_a(self):
+        r = add_a(
+            "foo",
+            ipaddress.ip_address("10.17.2.1"),
+            "example.com"
+        )
+        self.assertEqual(
+            r,
+            [
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    'example.com',
+                    'foo',
+                    'A',
+                    '10.17.2.1'
+                ]
+            ]
+        )
+        r = add_a(
+            "foo",
+            ipaddress.ip_address("10.17.2.1"),
+            "example.com",
+            [ipaddress.ip_network("10.0.0.0/8")]
+        )
+        self.assertEqual(
+            r,
+            [
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    'example.com',
+                    'foo',
+                    'A',
+                    '10.17.2.1'
+                ],
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    '10.in-addr.arpa',
+                    '1.2.17.10.in-addr.arpa',
+                    'PTR',
+                    'foo.example.com'
+                ]
+            ]
+        )
+
+    def test_add_aaaa(self):
+        r = add_aaaa(
+            "foo",
+            ipaddress.ip_address("2001:470:76c4:1:2::23"),
+            "example.com"
+        )
+        self.assertEqual(
+            r,
+            [
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    'example.com',
+                    'foo',
+                    'AAAA',
+                    '2001:470:76c4:1:2::23'
+                ]
+            ]
+        )
+        r = add_aaaa(
+            "foo",
+            ipaddress.ip_address("2001:470:76c4:1:2::23"),
+            "example.com",
+            [
+                ipaddress.ip_network("2001:470:76c4:1::/64"),
+                ipaddress.ip_network("2a01:dead:beef::/48"),
+                ipaddress.ip_network("2001:470:76c4:1:2::/80")
+            ]
+        )
+        self.assertEqual(
+            r,
+            [
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    'example.com',
+                    'foo',
+                    'AAAA',
+                    '2001:470:76c4:1:2::23'
+                ],
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    '2.0.0.0.1.0.0.0.4.c.6.7.0.7.4.0.1.0.0.2.ip6.arpa',
+                    '3.2.0.0.0.0.0.0.0.0.0.0.2.0.0.0.1.0.0.0.4.c.6.7.0.7.4.0.1.0.0.2.ip6.arpa',
+                    'PTR',
+                    'foo.example.com'
+                ]
+            ]
+        )
 
 if __name__ == '__main__':
     unittest.main()
