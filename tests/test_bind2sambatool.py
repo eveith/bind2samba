@@ -3,7 +3,8 @@ import ipaddress
 
 from bind2sambatool import (
     filter_matching_subnet,
-    rev4_from_network
+    rev4_from_network,
+    rev6_from_network,
 )
 
 class Bind2SambaToolTest(unittest.TestCase):
@@ -47,6 +48,12 @@ class Bind2SambaToolTest(unittest.TestCase):
         self.assertEqual(
             "16.172.in-addr.arpa",
             rev4_from_network(ipaddress.ip_network("172.16.0.0/14"))
+        )
+
+    def test_rev6_from_network(self):
+        self.assertEqual(
+            "1.0.0.0.4.c.6.7.0.7.4.0.1.0.0.2.ip6.arpa",
+            rev6_from_network(ipaddress.ip_network("2001:470:76c4:1::/64"))
         )
 
 
