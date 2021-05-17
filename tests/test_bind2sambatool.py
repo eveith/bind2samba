@@ -1,5 +1,6 @@
 import unittest
 import ipaddress
+from pathlib import Path
 
 from bind2sambatool import (
     filter_matching_subnet,
@@ -9,6 +10,7 @@ from bind2sambatool import (
     add_aaaa,
     add_cname,
     add_mx,
+    read_file,
 )
 
 class Bind2SambaToolTest(unittest.TestCase):
@@ -169,6 +171,48 @@ class Bind2SambaToolTest(unittest.TestCase):
                 ]
             ]
         )
+
+    def test_add_cname(self):
+        r = add_cname("foo", "bar.baz.com", "example.com")
+        self.assertEqual(
+            r,
+            [
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    'example.com',
+                    'foo',
+                    'CNAME',
+                    'bar.baz.com.example.com'
+                ]
+            ]
+        )
+
+    def test_add_mx(self):
+        r = add_mx("DONTCARE", "10 mxserver", "example.com")
+        self.assertEqual(
+            r,
+            [
+                [
+                    'samba-tool',
+                    'dns',
+                    'add',
+                    'localhost',
+                    'example.com',
+                    '@',
+                    'MX',
+                    'mxserver.example.com 10'
+                ]
+            ]
+        )
+
+    def test_read_file(self):
+        with open(Path(__file__).parent / "minimal-example.com.db", "r") as f:
+            r = read_file(f, None, [], [])
+        print(r)
+
 
 if __name__ == '__main__':
     unittest.main()
