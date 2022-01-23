@@ -39,6 +39,20 @@ def args_parser():
                              "can be given multiple times")
     parser.add_argument("--password",
                         help="Administrator password for samba-tool")
+    parser.add_argument("--filter",
+                        action="store",
+                        nargs=1,
+                        default=list(HANDLERS.keys()),
+                        help="Only handle records of the given type(s)")
+    parser.add_argument("--dry-run",
+                        "-n",
+                        action="store_true",
+                        help="Only show commands, do not execute")
+    parser.add_argument("--force",
+                        "-f",
+                        action="store_true",
+                        help="Continue execution even if an invocation of "
+                             "samba-tool fails")
     parser.add_argument("zonefile",
                         nargs='?',
                         type=argparse.FileType('r'),
@@ -125,13 +139,16 @@ HANDLERS = {
     'MX': add_mx
 }
 
-def handle_record(line, zone, rev4, rev6):
+def handle_record(line, zone, rev4, rev6, records_accepted):
     match = ENTRY_RE.match(line)
     if not match:
         return None
     typ = match.group(2)
+    if not typ in records_accepted:
+        return None
     if not typ in HANDLERS.keys():
-        print("ERROR: Unknown entry type \"%s\", ignoring" % typ)
+        print("ERROR: Unknown entry type \"%s\", ignoring" % typ,
+              file=sys.stderr)
         return None
     fun = HANDLERS[typ]
     sig = signature(fun)
@@ -151,7 +168,7 @@ def handle_record(line, zone, rev4, rev6):
                    zone)
     return None
 
-def read_file(in_file, zone, rev4, rev6):
+def read_file(in_file, zone, rev4, rev6, records_accepted):
     cmds = []
     for line in in_file:
         line = line.rstrip()
@@ -160,7 +177,7 @@ def read_file(in_file, zone, rev4, rev6):
             if match:
                 zone = match.group(1)
             continue
-        cmds += [handle_record(line, zone, rev4, rev6)]
+        cmds += [handle_record(line, zone, rev4, rev6, records_accepted)]
     cmds = [i for i in cmds if i is not None]
     return [i for c in cmds for i in c]
 
@@ -171,15 +188,18 @@ def print_commands(cmds):
 def main():
     args = args_parser().parse_args()
     admin_password = args.password
+    records_accepted = args.filter
     rev4 = [IPv4Network(x) for x in args.ipv4_subnet]
     rev6 = [IPv6Network(x) for x in args.ipv6_subnet]
-    cmds = read_file(args.zonefile, args.zone, rev4, rev6)
+    cmds = read_file(args.zonefile, args.zone, rev4, rev6, records_accepted)
     sys.stdin.close()
     sys.stdin = os.fdopen(1)
 
-    if sys.stdout.isatty():
+    if sys.stdout.isatty() and not args.dry_run:
         print("I would run the following commands:")
     print_commands(cmds)
+    if args.dry_run:
+        exit(0)
     if sys.stdout.isatty():
         answer = input("Does this look reasonable? [yN] ")
         if not answer or (answer[0] != 'y' and answer[0] != 'Y'):
@@ -204,6 +224,8 @@ def main():
             print(err, out)
             if "WERR_DNS_ERROR_RECORD_ALREADY_EXISTS" in err:
                 print('!', end='')
+            elif args.force:
+                continue
             else:
                 exit(2)
         if sys.stdout.isatty():

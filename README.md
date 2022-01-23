@@ -70,4 +70,4 @@ as any well-behaved tool should.
 
 The project's website is https://github.com/eveith/bind2samba-tool, but
 bug reports, feature wishes, or patches can also just e-mailed to
-<eveith+bind2samba-tool@binericien.org>.
+<eveith+bind2samba@binericien.org>.
