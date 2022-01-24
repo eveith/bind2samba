@@ -16,7 +16,7 @@ from ipaddress import ip_address, IPv4Network, IPv6Network
 SAMBA_TOOL = 'samba-tool'
 SOA_RE = re.compile(r"([\w^.]+)\.\s+IN\s+SOA")
 ENTRY_RE = re.compile(
-    r"\A\s*([a-zA-Z0-9-.]+)\.?\s+(?:IN)?\s+(AAAA|A|CNAME|PTR|MX)\s+([^;]+)")
+    r"\A\s*([a-zA-Z0-9-.]+)\.?\s+\d*\s*?(?:IN)?\s+(AAAA|A|CNAME|PTR|MX)\s+([^;]+)")
 
 
 def samba_tool():
