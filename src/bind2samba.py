@@ -16,7 +16,7 @@ from ipaddress import ip_address, IPv4Network, IPv6Network
 SAMBA_TOOL = 'samba-tool'
 SOA_RE = re.compile(r"([\w^.]+)\.\s+IN\s+SOA")
 ENTRY_RE = re.compile(
-    r"\A\s*([a-zA-Z0-9-.]+)\.?\s+\d*\s*?(?:IN)?\s+(AAAA|A|CNAME|PTR|MX)\s+([^;]+)")
+    r"\A\s*([a-zA-Z0-9-.]+)\.?\s+(?:\d*\s*?)?(?:IN)?\s+(AAAA|A|CNAME|PTR|MX)\s+([^;]+)")
 
 
 def samba_tool():
@@ -100,27 +100,39 @@ def expand_name(name, domainname):
         name = "%s.%s" % (name, domainname)
     return name
 
+def strip_domain(name, domain):
+    """Checks ::`name` for ::``domain`` and strips it."""
+    return re.sub(r"\." + re.escape(domain) + r"\.?\Z", "", name)
+
 def add_cname(name, target, domainname):
     return [cmd(domainname, name, 'CNAME', expand_name(target, domainname))]
 
 def add_a(name, address, domainname, rev4=list()):
-    c = [cmd(domainname, name, 'A', str(address))]
+    c = [cmd(domainname, strip_domain(name, domainname), 'A', str(address))]
     rev4 = filter_matching_subnet(address, rev4)
     if rev4:
-        c += [cmd(rev4_from_network(rev4),
-                  str(address.reverse_pointer),
-                  'PTR',
-                  "%s.%s" % (name, domainname))]
+        c += [
+            cmd(
+                rev4_from_network(rev4),
+                str(address.reverse_pointer),
+                'PTR',
+                "%s.%s" % (strip_domain(name, domainname), domainname)
+            )
+        ]
     return c
 
 def add_aaaa(name, address, domainname, rev6=list()):
-    c = [cmd(domainname, name, 'AAAA', str(address))]
+    c = [cmd(domainname, strip_domain(name, domainname), 'AAAA', str(address))]
     rev6 = filter_matching_subnet(address, rev6)
     if rev6:
-        c += [cmd(rev6_from_network(rev6),
-              str(address.reverse_pointer),
-              'PTR',
-              "%s.%s" % (name, domainname))]
+        c += [
+            cmd(
+                rev6_from_network(rev6),
+                str(address.reverse_pointer),
+                'PTR',
+                "%s.%s" % (strip_domain(name, domainname), domainname)
+            )
+        ]
     return c
 
 def add_mx(name, target, domainname):
