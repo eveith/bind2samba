@@ -1,4 +1,4 @@
-# bind2samba-tool: A converter for BIND zone files to samba-tool invocations
+# bind2samba: A converter for BIND zone files to samba-tool invocations
 
 ## About
 
@@ -34,9 +34,9 @@ Suppose you have the following zone file:
     charon          IN      A       172.16.5.1
     charon          IN      AAAA    2001:170:1243:1::1
 
-You can feed it directly to bind2samba-tool:
+You can feed it directly to bind2samba:
 
-    % bind2samba-tool example.com.db
+    % bind2samba example.com.db
     I would run the following commands:
     samba-tool dns add localhost example.com @ MX mx.example.com 10
     samba-tool dns add localhost example.com charon A 172.16.5.1
@@ -44,7 +44,7 @@ You can feed it directly to bind2samba-tool:
 
 Supplying subnets will create PTR records, too:
 
-    % bind2samba-tool \
+    % bind2samba \
         --ipv4-subnet=172.16.0.0/12 \
         --ipv6-subnet=2001:170:1243::/48 \
         minimal-example.com.db
@@ -61,13 +61,13 @@ The tool can also provide you with single commands without seeing a full SOA
 record, because `--zone example.com` is also a command line option. Then, you
 can simply feed records on stdin to it:
 
-    echo 'charon IN A 172.16.5.1' | ../src/bind2samba-tool --zone=example.com
+    echo 'charon IN A 172.16.5.1' | ../src/bind2samba --zone=example.com
 
-In general, running `bind2samba-tool --help` gives the full list of arguments,
+In general, running `bind2samba --help` gives the full list of arguments,
 as any well-behaved tool should.
 
 ## Reporting bugs, feature wishes, and contributing
 
-The project's website is https://github.com/eveith/bind2samba-tool, but
+The project's website is https://github.com/eveith/bind2samba, but
 bug reports, feature wishes, or patches can also just e-mailed to
 <eveith+bind2samba@binericien.org>.
